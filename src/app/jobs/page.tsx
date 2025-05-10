@@ -1,30 +1,30 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+type Job = {
+  id: number
+  title: string
+  category: string
+  salary: number
+}
 
 export default async function JobsPage() {
-  const supabase = createServerComponentClient({ cookies })
+  const res = await fetch(`${process.env.BASE_URL}/api/jobs`, {
+    cache: 'no-store',
+  })
 
-  const { data: jobs, error } = await supabase
-    .from('jobs')
-    .select('*')
-    .order('id', { ascending: false })
-
-  if (error) {
-    return <div>データの取得に失敗しました: {error.message}</div>
+  if (!res.ok) {
+    return <div>データの取得に失敗しました</div>
   }
 
+  const { jobs }:{jobs:Job[]} = await res.json()
+
   return (
-    <main className="p-6">
-      <h1 className="text-xl font-bold mb-4">求人一覧（SSR）</h1>
-      <ul className="space-y-3">
-        {jobs?.map((job) => (
-          <li key={job.id} className="border p-4 rounded shadow bg-white">
-            <h2 className="text-md font-semibold">{job.title}</h2>
-            <p className="text-sm text-gray-600">カテゴリ: {job.category}</p>
-            <p className="text-sm text-gray-600">年収: {job.salary} 万円</p>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <ul>
+      {jobs.map((job) => (
+        <li key={job.id}>
+          <h2>{job.title}</h2>
+          <p>{job.category}</p>
+          <p>{job.salary} 万円</p>
+        </li>
+      ))}
+    </ul>
   )
 }
