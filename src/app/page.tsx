@@ -1,108 +1,136 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState,useEffect } from 'react'
 
 export type JobType = {
-  id: number;
-  title: string;
-  category: string;
-  salary: number;
-};
+  id: number
+  title: string
+  category: string
+  salary: number
+}
+
+const jobList = [
+  { id: 1, title: "Webエンジニア募集", category: "エンジニア", salary: 600 },
+  { id: 2, title: "営業アシスタント", category: "営業", salary: 350 },
+  { id: 3, title: "マーケティングマネージャー", category: "マーケティング", salary: 800 },
+  { id: 4, title: "デザイナー募集", category: "デザイン", salary: 550 },
+  { id: 5, title: "製造管理", category: "製造", salary: 650 },
+  { id: 6, title: "経理マネージャー", category: "財務・経理", salary: 700 },
+  { id: 7, title: "人事担当", category: "人事", salary: 500 },
+  { id: 8, title: "カスタマーサポート", category: "カスタマーサポート", salary: 400 },
+  { id: 9, title: "看護師募集", category: "医療・介護", salary: 550 },
+  { id: 10, title: "事務スタッフ", category: "事務", salary: 300 },
+];
 
 export default function Home() {
-  const [jobs, setJobs] = useState<JobType[]>([]);
-  const [newJobTitle, setNewJobTitle] = useState('');
-  const [newJobCategory, setNewJobCategory] = useState('');
-  const [newJobSalary, setNewJobSalary] = useState('');
-  const [view, setView] = useState<'search' | 'post'>('search');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [minSalary, setMinSalary] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [jobs, setJobs] = useState<JobType[]>(jobList);
+// {/*投稿するやつ */}
+const [newJobTitle, setNewJobTitle] = useState('');
+const [newJobCategory, setNewJobCategory] = useState('');
+const [newJobSalary, setNewJobSalary] = useState('');
+const [view, setView] = useState<'search' | 'post'>('search');
+// {/*チェックして更新して更新された配列以外消す(useState＝初期値に戻したり色々状態の記録)*/}
+// {/*チェックボックスと同期 */}
+const [selectedCategories, setSelectedCategories] = useState<string[]>([]);  //文字列選択
+// {/*[年収最小値、選択]＝それ以上の金額選択 */}
+// {/*年収ver */}
+const [minSalary, setMinSalary] = useState<number | null>(null);
 
-  const jobsPerPage = 10;
+// {/*ペーじ */}
+const [currentPage, setCurrentPage] = useState(1);
+const jobsPerPage = 10; // 1ページに表示する件数
 
+// {/*カテゴリ*/}
   const allCategories = [
-    '事務', 'エンジニア', '営業', 'デザイン', 'マーケティング',
-    '財務・経理', '人事', 'カスタマーサポート', '製造', '医療・介護'
+    "事務", "エンジニア", "営業", "デザイン", "マーケティング",
+    "財務・経理", "人事", "カスタマーサポート", "製造", "医療・介護"
   ];
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      const res = await fetch('/api/jobs');
-      if (!res.ok) {
-        console.error('データ取得失敗');
-        return;
-      }
-      const { jobs } = await res.json();
-      setJobs(jobs);
-    };
-
-    fetchJobs();
-  }, []);
-
-  const handlePostSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newJobTitle || !newJobCategory || !newJobSalary) {
-      alert('すべての項目を入力してください');
-      return;
-    }
-
-    const newJob = {
-      title: newJobTitle,
-      category: newJobCategory,
-      salary: Number(newJobSalary),
-    };
-
-    const res = await fetch('/api/jobs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newJob),
-    });
-
-    if (!res.ok) {
-      alert('投稿に失敗しました');
-      return;
-    }
-
-    const data = await res.json();
-    setJobs((prev) => [data, ...prev]);
-    setNewJobTitle('');
-    setNewJobCategory('');
-    setNewJobSalary('');
-    setView('search');
-    setCurrentPage(1);
-  };
-
-  const handleCheckboxChange = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
-    );
-  };
-
-  const handleSalaryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setMinSalary(value ? Number(value) : null);
-    setCurrentPage(1);
-  };
-
-  const filteredJobs = jobs.filter((job) => {
-    const categoryMatch =
-      selectedCategories.length === 0 || selectedCategories.includes(job.category);
-    const salaryMatch = minSalary === null || job.salary >= minSalary;
-    return categoryMatch && salaryMatch;
+// {/*仕事の制限 */}
+  const filteredJobs = jobs.filter((job) => {  //選択と表示
+    const categoryMatch =  //
+      selectedCategories.length === 0 || selectedCategories.includes(job.category);  //何も選ばれていない時は全て表示、何か選ばれている時にはそれを表示
+    const salaryMatch =
+      minSalary === null || job.salary >= minSalary;  //給与の条件が指定されていないと選ばれた最低年収以上の求人だけ表示
+    return categoryMatch && salaryMatch;  //給与と上限の年収の両方を満たすと表示
   });
-
+  // 2. ページネーション用のスライスgpt
   const indexOfLastJob = currentPage * jobsPerPage;
   const indexOfFirstJob = indexOfLastJob - jobsPerPage;
   const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+const handlePrevPage = () => {
+  if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+};
+
+const handleNextPage = () => {
+  if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+};
+
+    
+  // 投稿時
+  const handlePostSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!newJobTitle || !newJobCategory || !newJobSalary) {
+      alert('すべての項目を入力してください')
+      return;
+    }
+
+    const newJob={
+      title: newJobTitle,
+      category: newJobCategory,
+      salary: Number(newJobSalary),
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  const res = await fetch('/api/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newJob),
+  });
+
+  if (!res.ok) {
+    alert('投稿失敗！！！！！');
+    return;
+  }
+
+  const data = await res.json();
+  setJobs((prev) => [data, ...prev]);
+  setNewJobTitle('');
+  setNewJobCategory('');
+  setNewJobSalary('');
+  setView('search');
+  setCurrentPage(1);
+};
+useEffect(() => {
+  const fetchJobs = async () => {
+    const res = await fetch('/api/jobs');
+    if (!res.ok) {
+      console.error('データ取得失敗');
+      return;
+    }
+    const { jobs } = await res.json();
+    setJobs(jobs);
   };
+
+  fetchJobs();
+}, []);
+
+// {/*チェックボックス */}
+  const handleCheckboxChange = (category: string) => {  //チェックされた文字列を
+    setSelectedCategories((prev) =>  //前の文字列から
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)  //チェック外したら削除
+        : [...prev, category]  //チェックしたら追加、
+    );
+  };
+// {/*年収選択 セレクトボックスとセット */}
+  const handleSalaryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value; //文字列から数値へ
+    setMinSalary(value ? Number(value) : null) //値がからの時は条件なしに戻して最終的にstateを更新
+    setCurrentPage(1)
+  }
   return (
     <div>
     {/* ヘッダー */}
