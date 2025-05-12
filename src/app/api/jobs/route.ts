@@ -22,3 +22,14 @@ export async function POST(req: Request) {
     }
   }
 }
+export async function GET() {
+  try {
+    const result = await pool.query('SELECT * FROM jobs ORDER BY id DESC');
+    return NextResponse.json({ jobs: result.rows }, { status: 200 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Unknown error' }, { status: 500 });
+  }
+}

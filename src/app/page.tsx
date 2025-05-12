@@ -111,7 +111,7 @@ useEffect(() => {
       return;
     }
     const { jobs } = await res.json();
-    setJobs(jobs);
+    setJobs([...jobs, ...jobList]);
   };
 
   fetchJobs();
