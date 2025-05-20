@@ -70,6 +70,7 @@ const handleNextPage = () => {
 
     
   // 投稿時
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -78,31 +79,41 @@ const handleNextPage = () => {
       return;
     }
 
-    const newJob={
-      title: newJobTitle,
-      category: newJobCategory,
-      salary: Number(newJobSalary),
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const newJob={
+        title: newJobTitle,
+        category: newJobCategory,
+        salary: Number(newJobSalary),
+      };
+
+      const res = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newJob),
+      });
+
+      if (!res.ok) {
+        alert('投稿失敗！！！！！');
+        return;
+      }
+
+      const data = await res.json();
+      setJobs((prev) => [data, ...prev]);
+      setNewJobTitle('');
+      setNewJobCategory('');
+      setNewJobSalary('');
+      setView('search');
+      setCurrentPage(1);
+    } catch (error) {
+      console.error('投稿エラー:', error);
+      alert('投稿中にエラーが発生しました');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  const res = await fetch('/api/jobs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(newJob),
-  });
-
-  if (!res.ok) {
-    alert('投稿失敗！！！！！');
-    return;
-  }
-
-  const data = await res.json();
-  setJobs((prev) => [data, ...prev]);
-  setNewJobTitle('');
-  setNewJobCategory('');
-  setNewJobSalary('');
-  setView('search');
-  setCurrentPage(1);
-};
 useEffect(() => {
   const fetchJobs = async () => {
     const res = await fetch('/api/jobs');
@@ -286,8 +297,16 @@ useEffect(() => {
 
   </div>
 
-  <button type="submit" className=" w-1/3 bg-blue-400 text-white px-4 py-2 rounded text-sm hover:bg-blue-300">
-    投稿
+  <button 
+    type="submit" 
+    disabled={isSubmitting}
+    className={`w-1/3 px-4 py-2 rounded text-sm ${
+      isSubmitting 
+        ? 'bg-gray-400 cursor-not-allowed' 
+        : 'bg-blue-400 hover:bg-blue-300'
+    } text-white`}
+  >
+    {isSubmitting ? '投稿中...' : '投稿'}
   </button>
 </form>
      </section>
