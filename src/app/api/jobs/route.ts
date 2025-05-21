@@ -15,6 +15,13 @@ export async function POST(req: Request) {
     return NextResponse.json(result.rows[0], { status: 201 })
   } catch (error: unknown) {
     if (error instanceof Error) {
+      // PostgreSQLのユニーク制約違反エラーコード
+      if (error.message.includes('unique_job_post')) {
+        return NextResponse.json(
+          { error: '同じ内容の求人が既に存在します' },
+          { status: 409 }
+        )
+      }
       console.error('PostgreSQL INSERT error:', error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     } else {

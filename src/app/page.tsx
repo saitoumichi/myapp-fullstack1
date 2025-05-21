@@ -72,18 +72,20 @@ const handleNextPage = () => {
   // 投稿時
   const [isSubmitting, setIsSubmitting] = useState(false);
   const handlePostSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!newJobTitle || !newJobCategory || !newJobSalary) {
-      alert('すべての項目を入力してください')
+      alert('すべての項目を入力してください');
       return;
     }
 
+    // 既に投稿中の場合は処理を中断
     if (isSubmitting) return;
-    setIsSubmitting(true);
 
     try {
-      const newJob={
+      setIsSubmitting(true);
+
+      const newJob = {
         title: newJobTitle,
         category: newJobCategory,
         salary: Number(newJobSalary),
@@ -95,12 +97,12 @@ const handleNextPage = () => {
         body: JSON.stringify(newJob),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        alert('投稿失敗！！！！！');
-        return;
+        throw new Error(data.error || '投稿に失敗しました');
       }
 
-      const data = await res.json();
       setJobs((prev) => [data, ...prev]);
       setNewJobTitle('');
       setNewJobCategory('');
@@ -109,7 +111,7 @@ const handleNextPage = () => {
       setCurrentPage(1);
     } catch (error) {
       console.error('投稿エラー:', error);
-      alert('投稿中にエラーが発生しました');
+      alert(error instanceof Error ? error.message : '投稿中にエラーが発生しました');
     } finally {
       setIsSubmitting(false);
     }
