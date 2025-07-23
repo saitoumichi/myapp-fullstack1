@@ -40,3 +40,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Unknown error' }, { status: 500 });
   }
 }
+
+export type JobType = {
+  id: number;
+  title: string;
+  category: string;
+  salary: number;
+  lastViewed?: number; // UNIXタイムスタンプ
+};
